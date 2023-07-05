@@ -1,0 +1,16 @@
+# SAM local
+.aws-sam/
+.awspublish.yml
+.template.yaml
+samconfig.toml
+__pycache__/
+*.pyc
+
+# VSCode
+.vscode/
+
+# pytest
+.pytest_cache/
+
+# mypy
+.mypy_cache/
