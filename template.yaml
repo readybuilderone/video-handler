@@ -8,7 +8,7 @@ Description: >
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
-    Timeout: 30
+    Timeout: 5
     MemorySize: 512
 
 Resources:
@@ -26,22 +26,36 @@ Resources:
         - S3WritePolicy:
             BucketName: "*"
         - CloudWatchFullAccess
-
-
-
-
-          
-
-# Outputs:
-#   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
-#   # Find out more about other implicit resources you can reference within SAM
-#   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
-#   HelloWorldApi:
-#     Description: "API Gateway endpoint URL for Prod stage for Hello World function"
-#     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
-#   HelloWorldFunction:
-#     Description: "Hello World Lambda Function ARN"
-#     Value: !GetAtt HelloWorldFunction.Arn
-#   HelloWorldFunctionIamRole:
-#     Description: "Implicit IAM Role created for Hello World function"
-#     Value: !GetAtt HelloWorldFunctionRole.Arn
+  APIVideoHandlerFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: video_handler/
+      Handler: app.video_api_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Policies:
+        - S3ReadPolicy:
+            BucketName: "*"
+        - S3WritePolicy:
+            BucketName: "*"
+        - CloudWatchFullAccess
+      Events:
+        VideoHandler:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /VideoHandler
+            Method: post
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  VideoHandlerApi:
+    Description: "API Gateway endpoint URL for Prod stage for VideoHandlerFunction function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/VideoHandler/"
+  VideoHandlerFunction:
+    Description: "Video Handler Lambda Function ARN"
+    Value: !GetAtt VideoHandlerFunction.Arn
+  VideoHandlerFunctionIamRole:
+    Description: "Implicit IAM Role created for Video Handler function"
+    Value: !GetAtt VideoHandlerFunctionRole.Arn
