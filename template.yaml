@@ -69,13 +69,35 @@ Resources:
           Properties:
             Path: /VideoHandler
             Method: post
+            RestApiId: !Ref "ServerlessApi"
+
+  ServerlessApi:
+    Type: "AWS::Serverless::Api"
+    Properties:
+      StageName: "Prod"
+      EndpointConfiguration:
+        Type: "PRIVATE"
+        VPCEndpointIds:
+          - !Ref VpcEndpointId
+        Auth:
+          ResourcePolicy:
+            CustomStatements: {
+                Effect: 'Allow',
+                Action: 'execute-api:Invoke', 
+                Resource: ['execute-api:/*/*/*'],
+                Principal: '*'
+              }
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
   # Find out more about other implicit resources you can reference within SAM
   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
-  VideoHandlerApi:
+  # VideoHandlerApi:
+  #   Description: "API Gateway endpoint URL for Prod stage for VideoHandlerFunction function"
+  #   Value: !Sub "https://${ServerlessApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/VideoHandler/"
+  ApiGatewayInvokeURL:
     Description: "API Gateway endpoint URL for Prod stage for VideoHandlerFunction function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/VideoHandler/"
+    Value: !Sub 'https://${ServerlessApi}.execute-api.${AWS::Region}.amazonaws.com/${ServerlessApi.Stage}VideoHandler/'
+
   VideoHandlerFunction:
     Description: "Video Handler Lambda Function ARN"
     Value: !GetAtt VideoHandlerFunction.Arn
