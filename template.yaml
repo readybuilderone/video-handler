@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: >
   video-handler
@@ -12,15 +12,31 @@ Globals:
     MemorySize: 512
 
 Parameters:
-#   EndpointConfigType:
-#     Type: String
-#     Default: PRIVATE
+  #   EndpointConfigType:
+  #     Type: String
+  #     Default: PRIVATE
   VpcEndpointId:
     Type: String
   FfmpegLayerARN:
     Type: String
 
 Resources:
+  ExplicitApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      EndpointConfiguration: 
+        Type: PRIVATE
+        VPCEndpointIds:
+          - !Ref VpcEndpointId
+      Auth:
+        ResourcePolicy:
+          CustomStatements: {
+              Effect: 'Allow',
+              Action: 'execute-api:Invoke', 
+              Resource: ['execute-api:/*/*/*'],
+              Principal: '*'
+            }
   VideoHandlerFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
@@ -67,37 +83,15 @@ Resources:
         VideoHandler:
           Type: Api # More info about API Event Source: https://github.com/anwslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
+            RestApiId: 
+              Ref: ExplicitApi
             Path: /VideoHandler
             Method: post
-            RestApiId: !Ref "ServerlessApi"
 
-  ServerlessApi:
-    Type: "AWS::Serverless::Api"
-    Properties:
-      StageName: "Prod"
-      EndpointConfiguration:
-        Type: "PRIVATE"
-        VPCEndpointIds:
-          - !Ref VpcEndpointId
-        Auth:
-          ResourcePolicy:
-            CustomStatements: {
-                Effect: 'Allow',
-                Action: 'execute-api:Invoke', 
-                Resource: ['execute-api:/*/*/*'],
-                Principal: '*'
-              }
 Outputs:
-  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
-  # Find out more about other implicit resources you can reference within SAM
-  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
-  # VideoHandlerApi:
-  #   Description: "API Gateway endpoint URL for Prod stage for VideoHandlerFunction function"
-  #   Value: !Sub "https://${ServerlessApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/VideoHandler/"
   ApiGatewayInvokeURL:
     Description: "API Gateway endpoint URL for Prod stage for VideoHandlerFunction function"
-    Value: !Sub 'https://${ServerlessApi}.execute-api.${AWS::Region}.amazonaws.com/${ServerlessApi.Stage}VideoHandler/'
-
+    Value: !Sub "https://${ExplicitApi}.execute-api.${AWS::Region}.amazonaws.com/${ExplicitApi.Stage}VideoHandler/"
   VideoHandlerFunction:
     Description: "Video Handler Lambda Function ARN"
     Value: !GetAtt VideoHandlerFunction.Arn
