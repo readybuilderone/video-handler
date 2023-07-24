@@ -1,6 +1,7 @@
 import json
 import os
 import boto3
+from botocore.exceptions import ClientError
 
 import logging
 import subprocess
@@ -32,6 +33,15 @@ def video_api_handler(event, context):
     time_off = data.get('timeOff')
     time_off = time_off if time_off else '00:00:00'
 
+    if not check_file_existence(bucket_name, key):
+        logger.error('s3://%s/%s not existed', bucket_name, key)
+        return {
+            "statusCode": 400,
+            "body": json.dumps({"bad request": "file not existed",
+                                "bucket_name": bucket_name,
+                                "file": key})
+        }
+
     result = extract_framee(bucket_name, key)
     logger.info('result a: %s', result)
     result['requestId'] = data.get('requestId')
@@ -39,6 +49,14 @@ def video_api_handler(event, context):
         "statusCode": 200,
         "body": json.dumps(result)
     }
+
+
+def check_file_existence(bucket_name, file_key):
+    try:
+        s3.head_object(Bucket=bucket_name, Key=file_key)
+        return True
+    except ClientError as e:
+        return False
 
 
 def extract_framee(bucket_name, key, time_off='00:00:00'):
@@ -75,7 +93,6 @@ def extract_framee(bucket_name, key, time_off='00:00:00'):
     logger.info(f"Frame image saved to: s3://{bucket_name}/{output_key}")
 
     return {
-        "statusCode": 200,
         "originVideo": f"s3://{bucket_name}/{key}",
         "image": f"s3://{bucket_name}/{output_key}",
         "duration": duration
