@@ -91,7 +91,7 @@ Resources:
 Outputs:
   ApiGatewayInvokeURL:
     Description: "API Gateway endpoint URL for Prod stage for VideoHandlerFunction function"
-    Value: !Sub "https://${ExplicitApi}.execute-api.${AWS::Region}.amazonaws.com/${ExplicitApi.Stage}VideoHandler/"
+    Value: !Sub "https://${ExplicitApi.RestApiId}.execute-api.${AWS::Region}.amazonaws.com/${ExplicitApi.Stage}/VideoHandler/"
   VideoHandlerFunction:
     Description: "Video Handler Lambda Function ARN"
     Value: !GetAtt VideoHandlerFunction.Arn
