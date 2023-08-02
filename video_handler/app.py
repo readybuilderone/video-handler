@@ -26,14 +26,14 @@ def lambda_handler(event, context):
     env_out_path = os.environ.get('OutPutPath', '')
     out_bucket = bucket_name if env_out_bucket == '' else env_out_bucket
     out_path = "video-handler-output" if env_out_path == '' else env_out_path
-    return extract_frame(bucket_name, key, out_bucket, out_path)
+    return extract_frame_with_outpath(bucket_name, key, out_bucket, out_path)
 
 
 def video_api_handler(event, context):
     logger.info('event: %s', event)
     data: dict = json.loads(event['body'])
     
-    # 验证input参数包含必填项 bucketName, key
+    # 验证input参数包含必填项 bucketName, key, outKey
     if not 'bucketName' in data:
         return {
             "statusCode": 400,
@@ -43,6 +43,11 @@ def video_api_handler(event, context):
         return {
             "statusCode": 400,
             "body": json.dumps({"bad request": "key is required"})
+        }
+    if not 'outKey' in data:
+        return {
+            "statusCode": 400,
+            "body": json.dumps({"bad request": "outKey is required"})
         }
     
     bucket_name = data['bucketName']
@@ -60,10 +65,10 @@ def video_api_handler(event, context):
         }
         
     out_bucket = bucket_name if not 'outBucketName' in data else data['outBucketName']
-    out_path = "video-handler-output" if not 'outPath' in data else data['outPath']
-    logger.info('out_bucket_name: %s, out_path: %s', out_bucket, out_path) 
+    out_key =data['outKey']
+    logger.info('out_bucket_name: %s, out_key: %s', out_bucket, out_key) 
 
-    result = extract_frame(bucket_name, key, out_bucket, out_path, time_off)
+    result = extract_frame_with_outkey(bucket_name, key, out_bucket, out_key, time_off)
     logger.info('result a: %s', result)
     result['requestId'] = data.get('requestId')
     return {
@@ -80,8 +85,11 @@ def check_file_existence(bucket_name, file_key):
         return False
 
 
-def extract_frame(bucket_name, key, out_bucket, out_path, time_off='00:00:00'):
+def extract_frame_with_outpath(bucket_name, key, out_bucket, out_path, time_off='00:00:00'):
     output_key = f"{out_path}/{os.path.basename(key)}.jpg"
+    return extract_frame_with_outkey(bucket_name, key, out_bucket,output_key, time_off)
+
+def extract_frame_with_outkey(bucket_name, key, out_bucket, output_key, time_off='00:00:00'):
     presigned_url = generate_presigned_url(bucket_name, key)
 
     # 调用 FFprobe 获取视频时长
